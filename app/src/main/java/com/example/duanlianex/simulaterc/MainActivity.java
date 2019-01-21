@@ -79,7 +79,7 @@ public class MainActivity extends AppCompatActivity implements Contract.View, Vi
     private void startScanDevice() {
         if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             btPresenter.startScanDevice();
-            btPresenter.setDeviceDiscoverable();
+            //btPresenter.setDeviceDiscoverable();
         } else {
             todoRequestPermission();
         }
