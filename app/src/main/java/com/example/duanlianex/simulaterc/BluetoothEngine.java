@@ -324,7 +324,6 @@ public class BluetoothEngine {
                     break;
                 case BluetoothDevice.ACTION_FOUND:
                     Log.i(TAG, "扫描到设备:name = " + device.getName());
-
                     if (!deviceList.contains(device)) {
                         deviceList.add(device);
                         if (device.getBondState() == BluetoothDevice.BOND_BONDED) {
@@ -373,7 +372,6 @@ public class BluetoothEngine {
 
         }
     };
-
 
     /**
      * 更新开关按钮的状态以及事后显示扫描按钮
@@ -478,6 +476,7 @@ public class BluetoothEngine {
     }
 
     public interface BtStateChangeListener {
+
         void onBtStateChangeListener(int state);
 
         void updateButtonState(String stateLabel);
