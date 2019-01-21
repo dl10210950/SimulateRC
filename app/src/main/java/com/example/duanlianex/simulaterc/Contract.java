@@ -16,8 +16,10 @@ public interface Contract {
 
         void updateBtnScanState(String label, boolean isClickable);
 
-        void refreshDeviceList(List<BluetoothDevice> list);
-        void updateBondStateAndConnectionState(String label);
+        void refreshPairedDeviceList(List<BluetoothDevice> pairedList);
+
+        void refreshUnpairedDeviceList(List<BluetoothDevice> unpairedList);
+
     }
 
     interface Realize {
@@ -30,10 +32,16 @@ public interface Contract {
         void stopScanDevice();
 
         int getBtState();
+
         void startPair(BluetoothDevice device);
+
         void setDeviceDiscoverable();
+
         void clearListAndScan();
+
         void unregisterBroadcast();
+
+        void getConnectedDevice();
 
     }
 }

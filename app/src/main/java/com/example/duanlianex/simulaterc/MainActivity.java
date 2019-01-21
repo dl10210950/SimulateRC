@@ -24,17 +24,19 @@ import java.util.List;
 
 import static com.example.duanlianex.simulaterc.R.id.btn_state;
 
-public class MainActivity extends AppCompatActivity implements Contract.View, View.OnClickListener, DeviceListRecyclerAdapter.OnItemClickListener,OnLongClickListener {
+public class MainActivity extends AppCompatActivity implements Contract.View, View.OnClickListener,
+        DeviceListRecyclerAdapter.OnUnpairedItemClickListener, DeviceListPairedRecyclerAdapter.OnPairedItemClickListener, OnLongClickListener {
 
 
     private Button btnState;
     private Button btnScan;
     private LinearLayout llDeviceList;
     private List<BluetoothDevice> deviceList;
-    private RecyclerView recyclerView;
+    private RecyclerView rvUnpaired;
+    private RecyclerView rvPaired;
     private BtPresenter btPresenter;
-    private DeviceListRecyclerAdapter adapter;
-    private int clickPosition = 0;
+    private DeviceListRecyclerAdapter adapterUnpaired;
+    private DeviceListPairedRecyclerAdapter adapterPaired;
 
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
@@ -49,20 +51,27 @@ public class MainActivity extends AppCompatActivity implements Contract.View, Vi
     private void initView() {
         btnState = (Button) findViewById(btn_state);
         btnScan = (Button) findViewById(R.id.btn_start_scan);
-        recyclerView = (RecyclerView) findViewById(R.id.recycler);
+        rvUnpaired = (RecyclerView) findViewById(R.id.recycler);
+        rvPaired = (RecyclerView) findViewById(R.id.recycler_paired);
         llDeviceList = (LinearLayout) findViewById(R.id.ll_device_list);
         btnState.setOnClickListener(this);
         btnScan.setOnClickListener(this);
         btnScan.setOnLongClickListener(this);
         btPresenter = new BtPresenter(this, this);
         deviceList = new ArrayList<>();
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new DeviceListRecyclerAdapter(this, deviceList);
-        recyclerView.setAdapter(adapter);
-        adapter.setOnItemClickListener(this);
+        rvUnpaired.setLayoutManager(new LinearLayoutManager(this));
+        rvPaired.setLayoutManager(new LinearLayoutManager(this));
+        adapterUnpaired = new DeviceListRecyclerAdapter(this, deviceList);
+        rvUnpaired.setAdapter(adapterUnpaired);
+
+        adapterUnpaired.setOnUnpairedItemClickListener(this);
+        adapterPaired = new DeviceListPairedRecyclerAdapter(this, deviceList);
+        rvPaired.setAdapter(adapterPaired);
+
+       adapterPaired.setOnPairedItemClickListener(this);
         if (btPresenter.getBtState() == 12) {
             startScanDevice();
-
+            btPresenter.getConnectedDevice();
         }
     }
 
@@ -70,7 +79,7 @@ public class MainActivity extends AppCompatActivity implements Contract.View, Vi
     private void startScanDevice() {
         if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             btPresenter.startScanDevice();
-           // btPresenter.setDeviceDiscoverable();
+            // btPresenter.setDeviceDiscoverable();
         } else {
             todoRequestPermission();
         }
@@ -123,13 +132,13 @@ public class MainActivity extends AppCompatActivity implements Contract.View, Vi
     }
 
     @Override
-    public void refreshDeviceList(List<BluetoothDevice> list) {
-        adapter.refreshData(list);
+    public void refreshPairedDeviceList(List<BluetoothDevice> pairedList) {
+        adapterPaired.refreshPairedDeviceList(pairedList);
     }
 
     @Override
-    public void updateBondStateAndConnectionState(String label) {
-        adapter.refreshState(label,clickPosition);
+    public void refreshUnpairedDeviceList(List<BluetoothDevice> unpairedList) {
+        adapterUnpaired.refreshUnpairedDeviceList(unpairedList);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
@@ -150,17 +159,19 @@ public class MainActivity extends AppCompatActivity implements Contract.View, Vi
     }
 
     @Override
-    public void onItemClickListener(int position, BluetoothDevice device) {
+    public void onUnpairedItemClickListener(int position, BluetoothDevice device) {
         btPresenter.startPair(device);
-        clickPosition = position;
+    }
+    @Override
+    public void onPairedItemClickListener(int position, BluetoothDevice device) {
+
     }
 
     @Override
     public boolean onLongClick(View view) {
-        switch (view.getId()){
+        switch (view.getId()) {
             case R.id.btn_start_scan:
                 btPresenter.clearListAndScan();
-                adapter.refreshState("",-1);
                 break;
         }
 
@@ -173,4 +184,6 @@ public class MainActivity extends AppCompatActivity implements Contract.View, Vi
         super.onDestroy();
         btPresenter.unregisterBroadcast();
     }
+
+
 }

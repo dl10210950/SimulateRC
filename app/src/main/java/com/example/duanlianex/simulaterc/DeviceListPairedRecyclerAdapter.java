@@ -15,23 +15,23 @@ import java.util.List;
 
 /**
  * Created by duanlian.ex on 2019/1/8.
- * 未配对的设备列表
+ * 已经配对的设备列表
  */
 
-public class DeviceListRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+public class DeviceListPairedRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private Context context;
-    private List<BluetoothDevice> unpairedList;
+    private List<BluetoothDevice> pairedList;
     private String bondConnectionState = "";
     private int currentClickPosition;
 
-    public DeviceListRecyclerAdapter(Context context, List<BluetoothDevice> list) {
+    public DeviceListPairedRecyclerAdapter(Context context, List<BluetoothDevice> pairedList) {
         this.context = context;
-        this.unpairedList = list;
+        this.pairedList = pairedList;
     }
 
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(context).inflate(R.layout.item_unpaired_device_list, parent, false);
+        View view = LayoutInflater.from(context).inflate(R.layout.item_paired_device_list, parent, false);
         return new ViewHolder(view);
     }
 
@@ -39,14 +39,14 @@ public class DeviceListRecyclerAdapter extends RecyclerView.Adapter<RecyclerView
     public void onBindViewHolder(RecyclerView.ViewHolder holder, final int position) {
         ViewHolder viewHolder = (ViewHolder) holder;
         viewHolder.itemView.setFocusable(true);
-        final BluetoothDevice device = unpairedList.get(position);
+        final BluetoothDevice device = pairedList.get(position);
         viewHolder.tvName.setText("名称：" + device.getName() + ";分类:" + device.getBluetoothClass().getMajorDeviceClass());
         viewHolder.tvAddress.setText("地址：" + device.getAddress());
         viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (onUnpairedItemClickListener != null) {
-                    onUnpairedItemClickListener.onUnpairedItemClickListener(position, device);
+                if (onPairedItemClickListener != null) {
+                    onPairedItemClickListener.onPairedItemClickListener(position, device);
                 }
             }
         });
@@ -56,7 +56,7 @@ public class DeviceListRecyclerAdapter extends RecyclerView.Adapter<RecyclerView
                 if (b) {
                     if (Build.VERSION.SDK_INT >= 21) {
                         ViewCompat.animate(view).scaleX(1f).scaleY(1.5f).translationX(1).start();
-                        view.setBackgroundColor(Color.RED);
+                        view.setBackgroundColor(Color.parseColor("#FFC300FF"));
                     }
                 } else {
                     ViewCompat.animate(view).scaleX(1).scaleY(1).translationX(1).start();
@@ -64,10 +64,9 @@ public class DeviceListRecyclerAdapter extends RecyclerView.Adapter<RecyclerView
                     ViewGroup parent = (ViewGroup) view.getParent();
                     try {
                         parent.requestLayout();
-                    }catch (NullPointerException e){
+                    } catch (NullPointerException e) {
                         e.printStackTrace();
                     }
-
                     parent.invalidate();
 
                 }
@@ -77,7 +76,7 @@ public class DeviceListRecyclerAdapter extends RecyclerView.Adapter<RecyclerView
 
     @Override
     public int getItemCount() {
-        return unpairedList != null ? unpairedList.size() : 0;
+        return pairedList != null ? pairedList.size() : 0;
     }
 
 
@@ -92,8 +91,8 @@ public class DeviceListRecyclerAdapter extends RecyclerView.Adapter<RecyclerView
         }
     }
 
-    public void refreshUnpairedDeviceList(List<BluetoothDevice> unpairedList) {
-        this.unpairedList = unpairedList;
+    public void refreshPairedDeviceList(List<BluetoothDevice> list) {
+        this.pairedList = list;
         notifyDataSetChanged();
     }
 
@@ -105,14 +104,14 @@ public class DeviceListRecyclerAdapter extends RecyclerView.Adapter<RecyclerView
         }
     }
 
-    private OnUnpairedItemClickListener onUnpairedItemClickListener;
+    private OnPairedItemClickListener onPairedItemClickListener;
 
-    interface OnUnpairedItemClickListener {
-        void onUnpairedItemClickListener(int position, BluetoothDevice device);
+    interface OnPairedItemClickListener {
+        void onPairedItemClickListener(int position, BluetoothDevice device);
     }
 
-    public void setOnUnpairedItemClickListener(OnUnpairedItemClickListener listener) {
-        this.onUnpairedItemClickListener = listener;
+    public void setOnPairedItemClickListener(OnPairedItemClickListener listener) {
+        this.onPairedItemClickListener = listener;
     }
 
 

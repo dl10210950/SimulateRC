@@ -14,6 +14,7 @@ import android.widget.Toast;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by duanlian.ex on 2019/1/7.
@@ -21,10 +22,13 @@ import java.util.List;
 
 public class BluetoothEngine {
     public static final String TAG = "SimulateRC";
+    private static final int INPUT_DEVICE = 4;
     private BluetoothAdapter adapter;
     private static Context mContext;
     private String noSupportBluetooth = "不支持蓝牙";
     private List<BluetoothDevice> deviceList;
+    private List<BluetoothDevice> unpairedDeviceList;
+    private List<BluetoothDevice> pairedDeviceList;
     private BluetoothDevice currentDevice;
     //input device连接状态改变时候发送的广播（键盘，遥控器，鼠标等）
     private static final String INPUT_DEVICE_CONNECTION_STATE_CHANGED_ACTION = "android.bluetooth.input.profile.action.CONNECTION_STATE_CHANGED";
@@ -35,6 +39,8 @@ public class BluetoothEngine {
     private BluetoothEngine() {
         adapter = BluetoothAdapter.getDefaultAdapter();
         deviceList = new ArrayList<>();
+        unpairedDeviceList = new ArrayList<>();
+        pairedDeviceList = new ArrayList<>();
         initReceiver();
         updateScState();
     }
@@ -60,10 +66,8 @@ public class BluetoothEngine {
         }
         if (btStateChangeListener != null)
             btStateChangeListener.updateButtonState("正在开。。。");
-        Log.e(TAG, "开启蓝牙");
+        Log.i(TAG, "开启蓝牙");
         adapter.enable();
-
-
     }
 
     /**
@@ -77,7 +81,7 @@ public class BluetoothEngine {
         }
         if (btStateChangeListener != null)
             btStateChangeListener.updateButtonState("正在关。。。");
-        Log.e(TAG, "开启蓝牙");
+        Log.i(TAG, "开启蓝牙");
         adapter.disable();
 
     }
@@ -87,7 +91,7 @@ public class BluetoothEngine {
      */
     public void startScanDevice() {
         if (adapter == null) return;
-        Log.e(TAG, "开始扫描");
+        Log.i(TAG, "开始扫描");
         adapter.startDiscovery();
         if (btStateChangeListener != null) {
             btStateChangeListener.updateBtnScanLabelChangeListener("扫描中。。。", false);
@@ -100,13 +104,12 @@ public class BluetoothEngine {
     public void stopScanDevice() {
         if (adapter == null) return;
         if (adapter.isDiscovering()) {
-            Log.e(TAG, "取消扫描");
+            Log.i(TAG, "取消扫描");
             adapter.cancelDiscovery();
             if (btStateChangeListener != null) {
                 btStateChangeListener.updateBtnScanLabelChangeListener("扫描停止", false);
             }
         }
-
     }
 
     /**
@@ -114,18 +117,8 @@ public class BluetoothEngine {
      */
     public void startPairing(BluetoothDevice device) {
         stopScanDevice();
-        //当前设备已经绑定
-        if (device.getBondState() == BluetoothDevice.BOND_BONDED) {
-            //弹框选择是否解配
-            removeBond(device);
-        } else {
-
-            createBond(device);
-        }
-
-
+        createBond(device);
     }
-
 
     /**
      * 绑定设备
@@ -153,7 +146,6 @@ public class BluetoothEngine {
         }
 
     }
-
 
     /**
      * 连接设备
@@ -185,7 +177,7 @@ public class BluetoothEngine {
             public void run() {
                 if (deviceType == (0x1F00 & 0x0500)) {//4:input_device
                     Log.i(TAG, "connect input device:" + device);
-                    adapter.getProfileProxy(mContext, mProfileListener, 4);
+                    adapter.getProfileProxy(mContext, mProfileListener, INPUT_DEVICE);
                 } else if (deviceType == (0x1F00 & 0x0400)) {//AUDIO_VIDEO
                     Log.i(TAG, "connect a2dp device:" + device);
                     adapter.getProfileProxy(mContext, mProfileListener, BluetoothProfile.A2DP);
@@ -255,6 +247,7 @@ public class BluetoothEngine {
      */
     public void clearListAndScan() {
         deviceList.clear();
+        unpairedDeviceList.clear();
         if (!adapter.isDiscovering()) {
             adapter.startDiscovery();
         } else {
@@ -285,7 +278,7 @@ public class BluetoothEngine {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            Log.e(TAG, "receiver = " + action);
+            Log.i(TAG, "receiver = " + action);
             BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
             switch (action) {
 //                case BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED:
@@ -306,20 +299,19 @@ public class BluetoothEngine {
                 case BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED:
                     int state = intent.getIntExtra(BluetoothProfile.EXTRA_STATE, 0);
                     if (state == BluetoothProfile.STATE_CONNECTED) {
-                        if (btStateChangeListener != null) {
-                            btStateChangeListener.updateBtnScanLabelChangeListener("连接成功，点击继续扫描（长按重新扫描）", true);
-                            btStateChangeListener.updateBondStateAndConnectionState("已连接");
+                        if (!pairedDeviceList.contains(device)) {
+                            pairedDeviceList.add(device);
                         }
                         Toast.makeText(context, "蓝牙设备:" + device.getName() + "已连接", Toast.LENGTH_SHORT).show();
-                        Log.e(TAG, "蓝牙设备:" + device.getName() + "已链接");
+                        Log.i(TAG, "蓝牙设备:" + device.getName() + "已链接");
                     } else if (state == BluetoothProfile.STATE_DISCONNECTED) {
-                        Log.e(TAG, "蓝牙设备:" + device.getName() + "已断开");
+                        Log.i(TAG, "蓝牙设备:" + device.getName() + "已断开");
                         Toast.makeText(context, "蓝牙设备:" + device.getName() + "已断开", Toast.LENGTH_SHORT).show();
                     }
                     break;
                 case BluetoothAdapter.ACTION_STATE_CHANGED:
                     int blueState = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, 0);
-                    Log.e(TAG, "蓝牙状态 state = " + blueState);
+                    Log.i(TAG, "蓝牙状态 state = " + blueState);
                     updateScState();
                     switch (blueState) {
                         case BluetoothAdapter.STATE_OFF:
@@ -331,12 +323,18 @@ public class BluetoothEngine {
                     }
                     break;
                 case BluetoothDevice.ACTION_FOUND:
-                    Log.e(TAG, "扫描到设备:name = " + device.getName());
+                    Log.i(TAG, "扫描到设备:name = " + device.getName());
 
                     if (!deviceList.contains(device)) {
                         deviceList.add(device);
+                        if (device.getBondState() == BluetoothDevice.BOND_BONDED) {
+                            pairedDeviceList.add(device);
+                        } else {
+                            unpairedDeviceList.add(device);
+                        }
                         if (btStateChangeListener != null) {
-                            btStateChangeListener.refreshDeviceList(deviceList);
+                            btStateChangeListener.refreshUnpairedDeviceList(unpairedDeviceList);
+                            btStateChangeListener.refreshPairedDeviceList(pairedDeviceList);
                         }
                     }
 
@@ -348,7 +346,7 @@ public class BluetoothEngine {
                     break;
                 case BluetoothDevice.ACTION_BOND_STATE_CHANGED:
                     int bondState = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, 10);
-                    Log.e(TAG, "bond state change :bond state is " + bondState);
+                    Log.i(TAG, "bond state change :bond state is " + bondState);
                     switch (bondState) {
                         case BluetoothDevice.BOND_BONDING:
                             if (btStateChangeListener != null) {
@@ -363,7 +361,6 @@ public class BluetoothEngine {
                         case BluetoothDevice.BOND_BONDED:
                             if (btStateChangeListener != null) {
                                 btStateChangeListener.updateBtnScanLabelChangeListener("配对成功，点击继续扫描（长按重新扫描）", true);
-                                btStateChangeListener.updateBondStateAndConnectionState("配对成功，正在连接中");
                             }
                             //绑定成功，去连接设备
                             connect(device);
@@ -443,6 +440,43 @@ public class BluetoothEngine {
         mContext.unregisterReceiver(mReceiver);
     }
 
+    /**
+     * 获取已经连接的设备
+     */
+    public void getConnectedDevice() {
+        Class<BluetoothAdapter> bluetoothAdapterClass = BluetoothAdapter.class;//得到BluetoothAdapter的Class对象
+        try {//得到连接状态的方法
+            Method method = bluetoothAdapterClass.getDeclaredMethod("getConnectionState", (Class[]) null);
+            //打开权限
+            method.setAccessible(true);
+            int state = (int) method.invoke(adapter, (Object[]) null);
+
+            if (state == BluetoothAdapter.STATE_CONNECTED) {
+                Log.i(TAG, "BluetoothAdapter.STATE_CONNECTED");
+                Set<BluetoothDevice> devices = adapter.getBondedDevices();
+                Log.i(TAG, "devices:" + devices.size());
+
+                for (BluetoothDevice device : devices) {
+                    Method isConnectedMethod = BluetoothDevice.class.getDeclaredMethod("isConnected", (Class[]) null);
+                    method.setAccessible(true);
+                    boolean isConnected = (boolean) isConnectedMethod.invoke(device, (Object[]) null);
+                    if (isConnected) {
+                        Log.i(TAG, "connected:" + device.getName());
+                        if (!pairedDeviceList.contains(device)) {
+                            pairedDeviceList.add(device);
+                            if (btStateChangeListener != null) {
+                                btStateChangeListener.refreshPairedDeviceList(pairedDeviceList);
+                            }
+                        }
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public interface BtStateChangeListener {
         void onBtStateChangeListener(int state);
 
@@ -452,8 +486,8 @@ public class BluetoothEngine {
 
         void updateBtnScanLabelChangeListener(String label, boolean isClickable);
 
-        void refreshDeviceList(List<BluetoothDevice> list);
+        void refreshPairedDeviceList(List<BluetoothDevice> pairedList);
 
-        void updateBondStateAndConnectionState(String label);
+        void refreshUnpairedDeviceList(List<BluetoothDevice> unpairedList);
     }
 }

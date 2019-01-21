@@ -20,7 +20,7 @@
             android:id="@+id/btn_state"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="开"/>
+            android:text="开" />
     </LinearLayout>
 
     <LinearLayout
@@ -35,15 +35,62 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:textColor="#000000"
-            android:text="开始扫描" />
+            android:text="开始扫描"
+            android:textColor="#000000" />
 
-        <android.support.v7.widget.RecyclerView
-            android:id="@+id/recycler"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:focusable="false"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#00ffff"
+                    android:gravity="center"
+                    android:text="未配对" />
+
+                <android.support.v7.widget.RecyclerView
+                    android:id="@+id/recycler"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:focusable="false" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:background="#00ff00" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#00ffff"
+                    android:gravity="center"
+                    android:text="已配对" />
+
+                <android.support.v7.widget.RecyclerView
+                    android:id="@+id/recycler_paired"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:focusable="false" />
+            </LinearLayout>
 
 
+        </LinearLayout>
     </LinearLayout>
 </RelativeLayout>
