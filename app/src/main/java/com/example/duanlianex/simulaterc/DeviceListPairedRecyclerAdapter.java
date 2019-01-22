@@ -62,12 +62,10 @@ public class DeviceListPairedRecyclerAdapter extends RecyclerView.Adapter<Recycl
                     ViewCompat.animate(view).scaleX(1).scaleY(1).translationX(1).start();
                     view.setBackgroundColor(Color.WHITE);
                     ViewGroup parent = (ViewGroup) view.getParent();
-                    try {
+                    if (parent != null) {
                         parent.requestLayout();
-                    } catch (NullPointerException e) {
-                        e.printStackTrace();
+                        parent.invalidate();
                     }
-                    parent.invalidate();
 
                 }
             }

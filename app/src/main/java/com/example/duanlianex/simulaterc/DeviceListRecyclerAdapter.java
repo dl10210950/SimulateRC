@@ -52,8 +52,8 @@ public class DeviceListRecyclerAdapter extends RecyclerView.Adapter<RecyclerView
         });
         viewHolder.itemView.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
-            public void onFocusChange(View view, boolean b) {
-                if (b) {
+            public void onFocusChange(View view, boolean hasFocus) {
+                if (hasFocus) {
                     if (Build.VERSION.SDK_INT >= 21) {
                         ViewCompat.animate(view).scaleX(1f).scaleY(1.5f).translationX(1).start();
                         view.setBackgroundColor(Color.RED);
@@ -62,13 +62,10 @@ public class DeviceListRecyclerAdapter extends RecyclerView.Adapter<RecyclerView
                     ViewCompat.animate(view).scaleX(1).scaleY(1).translationX(1).start();
                     view.setBackgroundColor(Color.WHITE);
                     ViewGroup parent = (ViewGroup) view.getParent();
-                    try {
+                    if (parent != null) {
                         parent.requestLayout();
-                    }catch (NullPointerException e){
-                        e.printStackTrace();
+                        parent.invalidate();
                     }
-
-                    parent.invalidate();
 
                 }
             }
