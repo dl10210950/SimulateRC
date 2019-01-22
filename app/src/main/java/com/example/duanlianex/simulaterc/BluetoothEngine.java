@@ -231,6 +231,7 @@ public class BluetoothEngine {
 
     /**
      * 设置能否被扫描到
+     * 有问题
      */
     public void setDeviceDiscoverable() {
         //开启显示，让本机可以被搜索到
@@ -299,12 +300,28 @@ public class BluetoothEngine {
                 case BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED:
                     int state = intent.getIntExtra(BluetoothProfile.EXTRA_STATE, 0);
                     if (state == BluetoothProfile.STATE_CONNECTED) {
+                        //从未配对列表去掉
+                        if (unpairedDeviceList.contains(device)) {
+                            unpairedDeviceList.remove(device);
+                        }
+                        //加到已配对列表
                         if (!pairedDeviceList.contains(device)) {
                             pairedDeviceList.add(device);
+                        }
+                        if (btStateChangeListener != null) {
+                            btStateChangeListener.refreshPairedDeviceList(pairedDeviceList);
+                            btStateChangeListener.refreshUnpairedDeviceList(unpairedDeviceList);
                         }
                         Toast.makeText(context, "蓝牙设备:" + device.getName() + "已连接", Toast.LENGTH_SHORT).show();
                         Log.i(TAG, "蓝牙设备:" + device.getName() + "已链接");
                     } else if (state == BluetoothProfile.STATE_DISCONNECTED) {
+                        //从已配对列表去掉
+                        if (pairedDeviceList.contains(device)) {
+                            pairedDeviceList.remove(device);
+                            if (btStateChangeListener != null) {
+                                btStateChangeListener.refreshPairedDeviceList(pairedDeviceList);
+                            }
+                        }
                         Log.i(TAG, "蓝牙设备:" + device.getName() + "已断开");
                         Toast.makeText(context, "蓝牙设备:" + device.getName() + "已断开", Toast.LENGTH_SHORT).show();
                     }
