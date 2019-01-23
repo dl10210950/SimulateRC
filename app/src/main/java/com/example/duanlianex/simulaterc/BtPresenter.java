@@ -69,6 +69,11 @@ class BtPresenter implements Contract.Realize, BluetoothEngine.BtStateChangeList
         engine.getConnectedDevice();
     }
 
+    @Override
+    public void removeBond(BluetoothDevice device) {
+        engine.removeBond(device);
+    }
+
 
     @Override
     public void onBtStateChangeListener(int state) {

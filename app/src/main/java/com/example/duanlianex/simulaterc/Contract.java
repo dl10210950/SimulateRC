@@ -42,6 +42,7 @@ public interface Contract {
         void unregisterBroadcast();
 
         void getConnectedDevice();
+        void removeBond(BluetoothDevice device);
 
     }
 }

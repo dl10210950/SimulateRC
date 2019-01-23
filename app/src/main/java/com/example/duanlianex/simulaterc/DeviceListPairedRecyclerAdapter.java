@@ -46,7 +46,7 @@ public class DeviceListPairedRecyclerAdapter extends RecyclerView.Adapter<Recycl
             @Override
             public void onClick(View view) {
                 if (onPairedItemClickListener != null) {
-                    onPairedItemClickListener.onPairedItemClickListener(position, device);
+                    onPairedItemClickListener.onPairedItemClickListener(position, device,view);
                 }
             }
         });
@@ -105,7 +105,7 @@ public class DeviceListPairedRecyclerAdapter extends RecyclerView.Adapter<Recycl
     private OnPairedItemClickListener onPairedItemClickListener;
 
     interface OnPairedItemClickListener {
-        void onPairedItemClickListener(int position, BluetoothDevice device);
+        void onPairedItemClickListener(int position, BluetoothDevice device,View view);
     }
 
     public void setOnPairedItemClickListener(OnPairedItemClickListener listener) {

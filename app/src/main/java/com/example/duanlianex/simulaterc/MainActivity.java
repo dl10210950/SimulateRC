@@ -13,11 +13,14 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.view.Gravity;
 import android.view.View;
 import android.view.View.OnLongClickListener;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+
+import com.example.duanlianex.simulaterc.custom.RemovePairPop;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,7 +71,7 @@ public class MainActivity extends AppCompatActivity implements Contract.View, Vi
         adapterPaired = new DeviceListPairedRecyclerAdapter(this, deviceList);
         rvPaired.setAdapter(adapterPaired);
 
-       adapterPaired.setOnPairedItemClickListener(this);
+        adapterPaired.setOnPairedItemClickListener(this);
         if (btPresenter.getBtState() == 12) {
             startScanDevice();
             btPresenter.getConnectedDevice();
@@ -79,7 +82,7 @@ public class MainActivity extends AppCompatActivity implements Contract.View, Vi
     private void startScanDevice() {
         if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             btPresenter.startScanDevice();
-            //btPresenter.setDeviceDiscoverable();
+            btPresenter.setDeviceDiscoverable();
         } else {
             todoRequestPermission();
         }
@@ -162,8 +165,20 @@ public class MainActivity extends AppCompatActivity implements Contract.View, Vi
     public void onUnpairedItemClickListener(int position, BluetoothDevice device) {
         btPresenter.startPair(device);
     }
+
     @Override
-    public void onPairedItemClickListener(int position, BluetoothDevice device) {
+    public void onPairedItemClickListener(int position, final BluetoothDevice device, View view) {
+        final RemovePairPop mPopwindow = new RemovePairPop(MainActivity.this);
+        mPopwindow.showAtLocation(view,
+                Gravity.CENTER | Gravity.CENTER_HORIZONTAL, 0, 0);
+        mPopwindow.setOnClickListener(new RemovePairPop.ClickListener() {
+            @Override
+            public void confirmClickListener() {
+                btPresenter.removeBond(device);
+                mPopwindow.dismiss();
+            }
+
+        });
 
     }
 

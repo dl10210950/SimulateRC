@@ -136,7 +136,7 @@ public class BluetoothEngine {
     /**
      * 解绑设备
      */
-    private void removeBond(BluetoothDevice device) {
+    public void removeBond(BluetoothDevice device) {
         Method method = null;
         try {
             method = BluetoothDevice.class.getMethod("removeBond");
@@ -234,12 +234,24 @@ public class BluetoothEngine {
      * 有问题
      */
     public void setDeviceDiscoverable() {
-        //开启显示，让本机可以被搜索到
-        if (adapter.getScanMode() != BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
-            Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-            discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 3000);
-            mContext.startActivity(discoverableIntent);
+//        //开启显示，让本机可以被搜索到
+//        if (adapter.getScanMode() != BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
+//            Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+//            discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 3000);
+//            mContext.startActivity(discoverableIntent);
+//        }
+        try {
+            Method setDiscoverableTimeout = BluetoothAdapter.class.getMethod("setDiscoverableTimeout", int.class);
+            setDiscoverableTimeout.setAccessible(true);
+            Method setScanMode =BluetoothAdapter.class.getMethod("setScanMode", int.class,int.class);
+            setScanMode.setAccessible(true);
+
+            setDiscoverableTimeout.invoke(adapter, 100000);
+            setScanMode.invoke(adapter, BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE,100000);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+
 
     }
 
