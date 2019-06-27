@@ -20,6 +20,8 @@ public interface Contract {
 
         void refreshUnpairedDeviceList(List<BluetoothDevice> unpairedList);
 
+        void refreshConnectedDeviceList(List<BluetoothDevice> connectedList);
+
     }
 
     interface Realize {
@@ -41,7 +43,10 @@ public interface Contract {
 
         void unregisterBroadcast();
 
+        void getPairedDevice();
+
         void getConnectedDevice();
+
         void removeBond(BluetoothDevice device);
 
     }

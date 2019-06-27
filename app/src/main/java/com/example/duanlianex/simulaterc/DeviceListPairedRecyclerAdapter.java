@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -21,8 +22,7 @@ import java.util.List;
 public class DeviceListPairedRecyclerAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private Context context;
     private List<BluetoothDevice> pairedList;
-    private String bondConnectionState = "";
-    private int currentClickPosition;
+    private List<BluetoothDevice> connectedList = new ArrayList<>();
 
     public DeviceListPairedRecyclerAdapter(Context context, List<BluetoothDevice> pairedList) {
         this.context = context;
@@ -42,11 +42,17 @@ public class DeviceListPairedRecyclerAdapter extends RecyclerView.Adapter<Recycl
         final BluetoothDevice device = pairedList.get(position);
         viewHolder.tvName.setText("名称：" + device.getName() + ";分类:" + device.getBluetoothClass().getMajorDeviceClass());
         viewHolder.tvAddress.setText("地址：" + device.getAddress());
+        for (BluetoothDevice connectedDevice : connectedList) {
+            if(connectedDevice.equals(device)){
+                viewHolder.tvState.setText("已连接");
+            }
+        }
+
         viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (onPairedItemClickListener != null) {
-                    onPairedItemClickListener.onPairedItemClickListener(position, device,view);
+                    onPairedItemClickListener.onPairedItemClickListener(position, device, view);
                 }
             }
         });
@@ -81,11 +87,13 @@ public class DeviceListPairedRecyclerAdapter extends RecyclerView.Adapter<Recycl
     static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvName;
         TextView tvAddress;
+        TextView tvState;
 
         public ViewHolder(View itemView) {
             super(itemView);
             tvName = itemView.findViewById(R.id.tv_name);
             tvAddress = itemView.findViewById(R.id.tv_address);
+            tvState = itemView.findViewById(R.id.tv_state);
         }
     }
 
@@ -94,18 +102,16 @@ public class DeviceListPairedRecyclerAdapter extends RecyclerView.Adapter<Recycl
         notifyDataSetChanged();
     }
 
-    public void refreshState(String label, int clickPosition) {
-        this.bondConnectionState = label;
-        this.currentClickPosition = clickPosition;
-        if (clickPosition >= 0) {
-            notifyItemChanged(clickPosition);
-        }
+    public void refreshConnectedDeviceList(List<BluetoothDevice> list) {
+        this.connectedList = list;
+        notifyDataSetChanged();
     }
+
 
     private OnPairedItemClickListener onPairedItemClickListener;
 
     interface OnPairedItemClickListener {
-        void onPairedItemClickListener(int position, BluetoothDevice device,View view);
+        void onPairedItemClickListener(int position, BluetoothDevice device, View view);
     }
 
     public void setOnPairedItemClickListener(OnPairedItemClickListener listener) {

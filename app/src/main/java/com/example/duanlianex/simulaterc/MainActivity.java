@@ -74,6 +74,7 @@ public class MainActivity extends AppCompatActivity implements Contract.View, Vi
         adapterPaired.setOnPairedItemClickListener(this);
         if (btPresenter.getBtState() == 12) {
             startScanDevice();
+            btPresenter.getPairedDevice();
             btPresenter.getConnectedDevice();
         }
     }
@@ -142,6 +143,11 @@ public class MainActivity extends AppCompatActivity implements Contract.View, Vi
     @Override
     public void refreshUnpairedDeviceList(List<BluetoothDevice> unpairedList) {
         adapterUnpaired.refreshUnpairedDeviceList(unpairedList);
+    }
+
+    @Override
+    public void refreshConnectedDeviceList(List<BluetoothDevice> connectedList) {
+        adapterPaired.refreshConnectedDeviceList(connectedList);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)

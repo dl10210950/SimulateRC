@@ -65,6 +65,11 @@ class BtPresenter implements Contract.Realize, BluetoothEngine.BtStateChangeList
     }
 
     @Override
+    public void getPairedDevice() {
+        engine.getPairedDevice();
+    }
+
+    @Override
     public void getConnectedDevice() {
         engine.getConnectedDevice();
     }
@@ -103,6 +108,11 @@ class BtPresenter implements Contract.Realize, BluetoothEngine.BtStateChangeList
     @Override
     public void refreshUnpairedDeviceList(List<BluetoothDevice> unpairedList) {
         mView.refreshUnpairedDeviceList(unpairedList);
+    }
+
+    @Override
+    public void refreshConnectedDeviceList(List<BluetoothDevice> connectedList) {
+        mView.refreshConnectedDeviceList(connectedList);
     }
 
 

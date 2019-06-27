@@ -30,6 +30,7 @@ public class BluetoothEngine {
     private List<BluetoothDevice> deviceList;
     private List<BluetoothDevice> unpairedDeviceList;
     private List<BluetoothDevice> pairedDeviceList;
+    private List<BluetoothDevice> connectedDeviceList;
     private BluetoothDevice currentDevice;
     //input device连接状态改变时候发送的广播（键盘，遥控器，鼠标等）
     private static final String INPUT_DEVICE_CONNECTION_STATE_CHANGED_ACTION = "android.bluetooth.input.profile.action.CONNECTION_STATE_CHANGED";
@@ -42,6 +43,7 @@ public class BluetoothEngine {
         deviceList = new ArrayList<>();
         unpairedDeviceList = new ArrayList<>();
         pairedDeviceList = new ArrayList<>();
+        connectedDeviceList = new ArrayList<>();
         initReceiver();
         updateScState();
     }
@@ -202,10 +204,10 @@ public class BluetoothEngine {
             switch (profile) {
                 case BluetoothProfile.A2DP:
                     mA2dp = (BluetoothA2dp) proxy;
-                    setPriority(currentDevice,profile);
+                    setPriority(currentDevice, profile);
                     try {
                         //通过反射获取BluetoothA2dp中connect方法（hide的），进行连接。
-                        Method connectMethod =BluetoothA2dp.class.getMethod("connect",
+                        Method connectMethod = BluetoothA2dp.class.getMethod("connect",
                                 BluetoothDevice.class);
                         connectMethod.invoke(mA2dp, currentDevice);
                     } catch (Exception e) {
@@ -215,12 +217,9 @@ public class BluetoothEngine {
                 case INPUT_DEVICE:
                     try {
                         //得到BluetoothInputDevice然后反射connect连接设备
-//                        Method method = mBluetoothProfile.getClass().getMethod("connect",
-//                                new Class[]{BluetoothDevice.class});
-//                        method.invoke(mBluetoothProfile, currentDevice);
                         Class mInputDevice = Class.forName("android.bluetooth.BluetoothInputDevice");
                         Method method = mInputDevice.getMethod("connect", String.class);
-                        method.invoke(mInputDevice.newInstance(),currentDevice);
+                        method.invoke(mInputDevice.newInstance(), currentDevice);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -255,23 +254,24 @@ public class BluetoothEngine {
 
     /**
      * 设置优先级
+     *
      * @param device
      * @param priority PRIORITY_OFF 0
      *                 PRIORITY_ON 100
      *                 PRIORITY_AUTO_CONNECTION 1000
      *                 PRIORITY_UNDEFINED -1
-     *
      */
     private void setPriority(BluetoothDevice device, int priority) {
         if (mA2dp == null) return;
         try {//通过反射获取BluetoothA2dp中setPriority方法（hide的），设置优先级
-            Method connectMethod =BluetoothA2dp.class.getMethod("setPriority",
-                    BluetoothDevice.class,int.class);
+            Method connectMethod = BluetoothA2dp.class.getMethod("setPriority",
+                    BluetoothDevice.class, int.class);
             connectMethod.invoke(mA2dp, device, priority);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
     /**
      * 设置能否被扫描到
      * 有问题
@@ -355,27 +355,24 @@ public class BluetoothEngine {
                 case BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED:
                     int state = intent.getIntExtra(BluetoothProfile.EXTRA_STATE, 0);
                     if (state == BluetoothProfile.STATE_CONNECTED) {
-                        //从未配对列表去掉
-                        if (unpairedDeviceList.contains(device)) {
-                            unpairedDeviceList.remove(device);
+                        //添加到已连接的设备列表
+                        if (!connectedDeviceList.contains(device)) {
+                            connectedDeviceList.add(device);
                         }
-                        //加到已配对列表
-                        if (!pairedDeviceList.contains(device)) {
-                            pairedDeviceList.add(device);
-                        }
+                        //已连接设备刷新
                         if (btStateChangeListener != null) {
-                            btStateChangeListener.refreshPairedDeviceList(pairedDeviceList);
-                            btStateChangeListener.refreshUnpairedDeviceList(unpairedDeviceList);
+                            btStateChangeListener.refreshConnectedDeviceList(connectedDeviceList);
                         }
                         Toast.makeText(context, "蓝牙设备:" + device.getName() + "已连接", Toast.LENGTH_SHORT).show();
                         Log.i(TAG, "蓝牙设备:" + device.getName() + "已链接");
                     } else if (state == BluetoothProfile.STATE_DISCONNECTED) {
-                        //从已配对列表去掉
-                        if (pairedDeviceList.contains(device)) {
-                            pairedDeviceList.remove(device);
-                            if (btStateChangeListener != null) {
-                                btStateChangeListener.refreshPairedDeviceList(pairedDeviceList);
-                            }
+                        //从已连接的设备列表中去掉
+                        if (connectedDeviceList.contains(device)) {
+                            connectedDeviceList.remove(device);
+                        }
+                        //断开连接刷新状态
+                        if (btStateChangeListener != null) {
+                            btStateChangeListener.refreshConnectedDeviceList(connectedDeviceList);
                         }
                         Log.i(TAG, "蓝牙设备:" + device.getName() + "已断开");
                         Toast.makeText(context, "蓝牙设备:" + device.getName() + "已断开", Toast.LENGTH_SHORT).show();
@@ -428,10 +425,29 @@ public class BluetoothEngine {
                             if (btStateChangeListener != null) {
                                 btStateChangeListener.updateBtnScanLabelChangeListener("配对失败，点击继续扫描（长按重新扫描）", true);
                             }
+                            //解配或者配对失败移除已配对列表
+                            if (pairedDeviceList.contains(device)) {
+                                pairedDeviceList.remove(device);
+                                if (btStateChangeListener != null) {
+                                    btStateChangeListener.refreshPairedDeviceList(pairedDeviceList);
+                                }
+                            }
                             break;
                         case BluetoothDevice.BOND_BONDED:
                             if (btStateChangeListener != null) {
                                 btStateChangeListener.updateBtnScanLabelChangeListener("配对成功，点击继续扫描（长按重新扫描）", true);
+                            }
+                            //从未配对列表去掉
+                            if (unpairedDeviceList.contains(device)) {
+                                unpairedDeviceList.remove(device);
+                            }
+                            //加到已配对列表
+                            if (!pairedDeviceList.contains(device)) {
+                                pairedDeviceList.add(device);
+                            }
+                            if (btStateChangeListener != null) {
+                                btStateChangeListener.refreshPairedDeviceList(pairedDeviceList);
+                                btStateChangeListener.refreshUnpairedDeviceList(unpairedDeviceList);
                             }
                             //绑定成功，去连接设备
                             connect(device);
@@ -511,6 +527,21 @@ public class BluetoothEngine {
     }
 
     /**
+     * 获取已经配对的设备
+     */
+    public void getPairedDevice() {
+        Set<BluetoothDevice> bondedDevices = adapter.getBondedDevices();
+        for (BluetoothDevice device : bondedDevices) {
+            if (!pairedDeviceList.contains(device)) {
+                pairedDeviceList.add(device);
+            }
+        }
+        if (btStateChangeListener != null) {
+            btStateChangeListener.refreshPairedDeviceList(pairedDeviceList);
+        }
+    }
+
+    /**
      * 获取已经连接的设备
      */
     public void getConnectedDevice() {
@@ -532,10 +563,10 @@ public class BluetoothEngine {
                     boolean isConnected = (boolean) isConnectedMethod.invoke(device, (Object[]) null);
                     if (isConnected) {
                         Log.i(TAG, "connected:" + device.getName());
-                        if (!pairedDeviceList.contains(device)) {
-                            pairedDeviceList.add(device);
+                        if (!connectedDeviceList.contains(device)) {
+                            connectedDeviceList.add(device);
                             if (btStateChangeListener != null) {
-                                btStateChangeListener.refreshPairedDeviceList(pairedDeviceList);
+                                btStateChangeListener.refreshConnectedDeviceList(connectedDeviceList);
                             }
                         }
                     }
@@ -560,5 +591,7 @@ public class BluetoothEngine {
         void refreshPairedDeviceList(List<BluetoothDevice> pairedList);
 
         void refreshUnpairedDeviceList(List<BluetoothDevice> unpairedList);
+
+        void refreshConnectedDeviceList(List<BluetoothDevice> connectedList);
     }
 }
