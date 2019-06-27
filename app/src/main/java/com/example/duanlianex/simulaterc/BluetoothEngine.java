@@ -22,6 +22,7 @@ import java.util.Set;
 
 public class BluetoothEngine {
     public static final String TAG = "SimulateRC";
+    //INPUT_DEVICE在bluetoothProfile中是hide的
     private static final int INPUT_DEVICE = 4;
     private BluetoothAdapter adapter;
     private static Context mContext;
@@ -191,20 +192,43 @@ public class BluetoothEngine {
     }
 
     private BluetoothProfile mBluetoothProfile;
+    private BluetoothA2dp mA2dp;
     private BluetoothProfile.ServiceListener mProfileListener = new BluetoothProfile.ServiceListener() {
         @Override
         public void onServiceConnected(int profile, BluetoothProfile proxy) {
             Log.i(TAG, "mConnectListener onServiceConnected");
-            //BluetoothProfile proxy这个已经是BluetoothInputDevice类型了
             mBluetoothProfile = proxy;
-            try {
-                //得到BluetoothInputDevice然后反射connect连接设备
-                Method method = mBluetoothProfile.getClass().getMethod("connect",
-                        new Class[]{BluetoothDevice.class});
-                method.invoke(mBluetoothProfile, currentDevice);
-            } catch (Exception e) {
-                e.printStackTrace();
+            //判断连接的profile
+            switch (profile) {
+                case BluetoothProfile.A2DP:
+                    mA2dp = (BluetoothA2dp) proxy;
+                    setPriority(currentDevice,profile);
+                    try {
+                        //通过反射获取BluetoothA2dp中connect方法（hide的），进行连接。
+                        Method connectMethod =BluetoothA2dp.class.getMethod("connect",
+                                BluetoothDevice.class);
+                        connectMethod.invoke(mA2dp, currentDevice);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case INPUT_DEVICE:
+                    try {
+                        //得到BluetoothInputDevice然后反射connect连接设备
+//                        Method method = mBluetoothProfile.getClass().getMethod("connect",
+//                                new Class[]{BluetoothDevice.class});
+//                        method.invoke(mBluetoothProfile, currentDevice);
+                        Class mInputDevice = Class.forName("android.bluetooth.BluetoothInputDevice");
+                        Method method = mInputDevice.getMethod("connect", String.class);
+                        method.invoke(mInputDevice.newInstance(),currentDevice);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    break;
+
             }
+
+
         }
 
         @Override
@@ -230,6 +254,25 @@ public class BluetoothEngine {
     }
 
     /**
+     * 设置优先级
+     * @param device
+     * @param priority PRIORITY_OFF 0
+     *                 PRIORITY_ON 100
+     *                 PRIORITY_AUTO_CONNECTION 1000
+     *                 PRIORITY_UNDEFINED -1
+     *
+     */
+    private void setPriority(BluetoothDevice device, int priority) {
+        if (mA2dp == null) return;
+        try {//通过反射获取BluetoothA2dp中setPriority方法（hide的），设置优先级
+            Method connectMethod =BluetoothA2dp.class.getMethod("setPriority",
+                    BluetoothDevice.class,int.class);
+            connectMethod.invoke(mA2dp, device, priority);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    /**
      * 设置能否被扫描到
      * 有问题
      */
@@ -243,11 +286,11 @@ public class BluetoothEngine {
         try {
             Method setDiscoverableTimeout = BluetoothAdapter.class.getMethod("setDiscoverableTimeout", int.class);
             setDiscoverableTimeout.setAccessible(true);
-            Method setScanMode =BluetoothAdapter.class.getMethod("setScanMode", int.class,int.class);
+            Method setScanMode = BluetoothAdapter.class.getMethod("setScanMode", int.class, int.class);
             setScanMode.setAccessible(true);
 
             setDiscoverableTimeout.invoke(adapter, 100000);
-            setScanMode.invoke(adapter, BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE,100000);
+            setScanMode.invoke(adapter, BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE, 100000);
         } catch (Exception e) {
             e.printStackTrace();
         }
